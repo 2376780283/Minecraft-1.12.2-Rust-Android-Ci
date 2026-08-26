@@ -22,7 +22,9 @@ impl TouchConfig {
     pub fn read_lines(lines: &[String]) -> Self {
         let mut config = Self::default();
         for line in lines {
-            let Some((key, value)) = line.split_once('=') else { continue; };
+            let Some((key, value)) = line.split_once('=') else {
+                continue;
+            };
             if key == "touchEnabled" {
                 config.enabled = value.trim() == "true";
             }

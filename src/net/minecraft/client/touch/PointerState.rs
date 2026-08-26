@@ -13,7 +13,9 @@ pub struct PointerState {
 }
 
 impl PointerState {
-    pub fn new() -> Self { Self::default() }
+    pub fn new() -> Self {
+        Self::default()
+    }
 
     pub fn started(&mut self, id: u64, position: (f64, f64)) {
         self.pointers.insert(id, Pointer { position });

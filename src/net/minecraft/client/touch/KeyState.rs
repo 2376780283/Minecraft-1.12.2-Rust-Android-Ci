@@ -30,19 +30,27 @@ impl KeyState {
         self.left = false;
         self.right = false;
         match direction {
-            Some(DpadDirection::Forward) | Some(DpadDirection::LeftForward) | Some(DpadDirection::RightForward) => self.forward = true,
+            Some(DpadDirection::Forward)
+            | Some(DpadDirection::LeftForward)
+            | Some(DpadDirection::RightForward) => self.forward = true,
             _ => {}
         }
         match direction {
-            Some(DpadDirection::Backward) | Some(DpadDirection::LeftBackward) | Some(DpadDirection::RightBackward) => self.back = true,
+            Some(DpadDirection::Backward)
+            | Some(DpadDirection::LeftBackward)
+            | Some(DpadDirection::RightBackward) => self.back = true,
             _ => {}
         }
         match direction {
-            Some(DpadDirection::Left) | Some(DpadDirection::LeftForward) | Some(DpadDirection::LeftBackward) => self.left = true,
+            Some(DpadDirection::Left)
+            | Some(DpadDirection::LeftForward)
+            | Some(DpadDirection::LeftBackward) => self.left = true,
             _ => {}
         }
         match direction {
-            Some(DpadDirection::Right) | Some(DpadDirection::RightForward) | Some(DpadDirection::RightBackward) => self.right = true,
+            Some(DpadDirection::Right)
+            | Some(DpadDirection::RightForward)
+            | Some(DpadDirection::RightBackward) => self.right = true,
             _ => {}
         }
     }

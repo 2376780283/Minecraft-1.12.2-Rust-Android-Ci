@@ -2,11 +2,11 @@ use crate::net::minecraft::client::gui::FontRenderer::FontRenderer;
 use crate::net::minecraft::client::gui::GuiButton::{
     GuiButton, GuiSoundCommand, BUTTON_CLICK_SOUND_PATH,
 };
-use crate::net::minecraft::util::ResourceLocation::ResourceLocation;
 use crate::net::minecraft::client::gui::GuiOptionSlider::GuiOptionSlider;
 use crate::net::minecraft::client::gui::GuiScreen::GuiScreen;
 use crate::net::minecraft::client::resources::Locale::Locale;
 use crate::net::minecraft::client::settings::GameSettings::GameSettings;
+use crate::net::minecraft::util::ResourceLocation::ResourceLocation;
 use crate::vulkan::GuiDrawList::GuiDrawList;
 
 const FOV_ID: i32 = 0;
@@ -63,7 +63,9 @@ impl Default for GuiOptions {
 }
 
 impl GuiOptions {
-    pub fn new() -> Self { Self::default() }
+    pub fn new() -> Self {
+        Self::default()
+    }
 
     pub fn initGui(&mut self, width: i32, height: i32, locale: &Locale, settings: &GameSettings) {
         self.GuiScreen.width = width;
@@ -73,29 +75,51 @@ impl GuiOptions {
 
         self.fovSlider.GuiButton.x = width / 2 - 155;
         self.fovSlider.GuiButton.y = height / 6 - 12;
-        self.fovSlider.setSliderValue(normalize_fov(settings.fovSetting));
-        self.fovSlider.setDisplayString(fov_label(locale, settings.fovSetting));
+        self.fovSlider
+            .setSliderValue(normalize_fov(settings.fovSetting));
+        self.fovSlider
+            .setDisplayString(fov_label(locale, settings.fovSetting));
 
         // Explicit user-requested extension retained in the otherwise unused
         // right-hand row; it does not replace or alter the vanilla FOV slider.
         self.GuiScreen.buttonList.push(GuiButton::newWithSize(
-            201, width / 2 + 5, height / 6 - 12, 150, 20,
+            201,
+            width / 2 + 5,
+            height / 6 - 12,
+            150,
+            20,
             force_sprint_label(locale, settings.forceSprint),
         ));
         self.GuiScreen.buttonList.push(GuiButton::newWithSize(
-            110, width / 2 - 155, height / 6 + 42, 150, 20,
+            110,
+            width / 2 - 155,
+            height / 6 + 42,
+            150,
+            20,
             locale.translate_key("options.skinCustomisation"),
         ));
         self.GuiScreen.buttonList.push(GuiButton::newWithSize(
-            106, width / 2 + 5, height / 6 + 42, 150, 20,
+            106,
+            width / 2 + 5,
+            height / 6 + 42,
+            150,
+            20,
             locale.translate_key("options.sounds"),
         ));
         self.GuiScreen.buttonList.push(GuiButton::newWithSize(
-            101, width / 2 - 155, height / 6 + 66, 150, 20,
+            101,
+            width / 2 - 155,
+            height / 6 + 66,
+            150,
+            20,
             locale.translate_key("options.video"),
         ));
         self.GuiScreen.buttonList.push(GuiButton::newWithSize(
-            100, width / 2 + 5, height / 6 + 66, 150, 20,
+            100,
+            width / 2 + 5,
+            height / 6 + 66,
+            150,
+            20,
             locale.translate_key("options.controls"),
         ));
         // Bedrock-style touch layer (Android): settings button right of the
@@ -108,23 +132,42 @@ impl GuiOptions {
             let _ = (width, height);
         }
         self.GuiScreen.buttonList.push(GuiButton::newWithSize(
-            102, width / 2 - 155, height / 6 + 90, 150, 20,
+            102,
+            width / 2 - 155,
+            height / 6 + 90,
+            150,
+            20,
             locale.translate_key("options.language"),
         ));
         self.GuiScreen.buttonList.push(GuiButton::newWithSize(
-            103, width / 2 + 5, height / 6 + 90, 150, 20,
+            103,
+            width / 2 + 5,
+            height / 6 + 90,
+            150,
+            20,
             locale.translate_key("options.chat.title"),
         ));
         self.GuiScreen.buttonList.push(GuiButton::newWithSize(
-            105, width / 2 - 155, height / 6 + 114, 150, 20,
+            105,
+            width / 2 - 155,
+            height / 6 + 114,
+            150,
+            20,
             locale.translate_key("options.resourcepack"),
         ));
         self.GuiScreen.buttonList.push(GuiButton::newWithSize(
-            104, width / 2 + 5, height / 6 + 114, 150, 20,
+            104,
+            width / 2 + 5,
+            height / 6 + 114,
+            150,
+            20,
             locale.translate_key("options.snooper.view"),
         ));
         self.GuiScreen.buttonList.push(GuiButton::new(
-            200, width / 2 - 100, height / 6 + 168, locale.translate_key("gui.done"),
+            200,
+            width / 2 - 100,
+            height / 6 + 168,
+            locale.translate_key("gui.done"),
         ));
     }
 
@@ -136,7 +179,14 @@ impl GuiOptions {
         mouseY: i32,
         partialTicks: f32,
     ) {
-        self.drawScreenWithWorld(drawList, fontRendererObj, mouseX, mouseY, partialTicks, false);
+        self.drawScreenWithWorld(
+            drawList,
+            fontRendererObj,
+            mouseX,
+            mouseY,
+            partialTicks,
+            false,
+        );
     }
 
     pub fn drawScreenInWorld(
@@ -147,7 +197,14 @@ impl GuiOptions {
         mouseY: i32,
         partialTicks: f32,
     ) {
-        self.drawScreenWithWorld(drawList, fontRendererObj, mouseX, mouseY, partialTicks, true);
+        self.drawScreenWithWorld(
+            drawList,
+            fontRendererObj,
+            mouseX,
+            mouseY,
+            partialTicks,
+            true,
+        );
     }
 
     fn drawScreenWithWorld(
@@ -159,13 +216,23 @@ impl GuiOptions {
         partialTicks: f32,
         worldLoaded: bool,
     ) {
-        if worldLoaded { self.GuiScreen.drawDefaultBackgroundInWorld(drawList); }
-        else { self.GuiScreen.drawDefaultBackground(drawList); }
+        if worldLoaded {
+            self.GuiScreen.drawDefaultBackgroundInWorld(drawList);
+        } else {
+            self.GuiScreen.drawDefaultBackground(drawList);
+        }
         self.GuiScreen.Gui.drawCenteredString(
-            fontRendererObj, drawList, &self.title, self.GuiScreen.width / 2, 15, 0x00FF_FFFF,
+            fontRendererObj,
+            drawList,
+            &self.title,
+            self.GuiScreen.width / 2,
+            15,
+            0x00FF_FFFF,
         );
-        self.fovSlider.drawButton(drawList, fontRendererObj, mouseX, mouseY, partialTicks);
-        self.GuiScreen.drawScreen(drawList, fontRendererObj, mouseX, mouseY, partialTicks);
+        self.fovSlider
+            .drawButton(drawList, fontRendererObj, mouseX, mouseY, partialTicks);
+        self.GuiScreen
+            .drawScreen(drawList, fontRendererObj, mouseX, mouseY, partialTicks);
         // Bedrock-style touch layer (Android): the touch-settings button is
         // drawn with its own sprite (no vanilla background, no text).
         #[cfg(target_os = "android")]
@@ -174,7 +241,14 @@ impl GuiOptions {
             use crate::net::minecraft::client::touch::Widgets::{pick, SETTINGS, SETTINGS_ACTIVE};
             let (bx, by) = touch_settings_button_rect(self.GuiScreen.width, self.GuiScreen.height);
             let mouseOver = mouseX >= bx && mouseX < bx + 18 && mouseY >= by && mouseY < by + 18;
-            draw_sprite(drawList, bx, by, 18, 18, pick(mouseOver, SETTINGS, SETTINGS_ACTIVE));
+            draw_sprite(
+                drawList,
+                bx,
+                by,
+                18,
+                18,
+                pick(mouseOver, SETTINGS, SETTINGS_ACTIVE),
+            );
         }
     }
 
@@ -185,7 +259,9 @@ impl GuiOptions {
         mouseButton: i32,
         locale: &Locale,
     ) -> Option<GuiOptionsInteraction> {
-        if mouseButton != 0 { return None; }
+        if mouseButton != 0 {
+            return None;
+        }
         // Bedrock-style touch layer (Android): the touch-settings sprite
         // button right of the controls row (handled outside buttonList).
         #[cfg(target_os = "android")]
@@ -210,7 +286,9 @@ impl GuiOptions {
             });
         }
         self.GuiScreen.buttonList.iter().find_map(|button| {
-            if !button.mousePressed(mouseX, mouseY) { return None; }
+            if !button.mousePressed(mouseX, mouseY) {
+                return None;
+            }
             let action = match button.id {
                 201 => GuiOptionsAction::ToggleForceSprint,
                 110 => GuiOptionsAction::OpenSkinCustomisation,
@@ -224,7 +302,10 @@ impl GuiOptions {
                 200 => GuiOptionsAction::Done,
                 _ => return None,
             };
-            Some(GuiOptionsInteraction { action, sound: Some(button.playPressSound()) })
+            Some(GuiOptionsInteraction {
+                action,
+                sound: Some(button.playPressSound()),
+            })
         })
     }
 
@@ -232,7 +313,10 @@ impl GuiOptions {
         self.fovSlider.mouseDragged(mouseX).map(|normalized| {
             let fov = denormalize_fov(normalized);
             self.fovSlider.setDisplayString(fov_label(locale, fov));
-            GuiOptionsInteraction { action: GuiOptionsAction::SetFov(fov), sound: None }
+            GuiOptionsInteraction {
+                action: GuiOptionsAction::SetFov(fov),
+                sound: None,
+            }
         })
     }
 
@@ -241,8 +325,12 @@ impl GuiOptions {
     }
 }
 
-fn normalize_fov(fov: f32) -> f32 { ((fov.clamp(30.0, 110.0) - 30.0) / 80.0).clamp(0.0, 1.0) }
-fn denormalize_fov(value: f32) -> f32 { (30.0 + value.clamp(0.0, 1.0) * 80.0).round() }
+fn normalize_fov(fov: f32) -> f32 {
+    ((fov.clamp(30.0, 110.0) - 30.0) / 80.0).clamp(0.0, 1.0)
+}
+fn denormalize_fov(value: f32) -> f32 {
+    (30.0 + value.clamp(0.0, 1.0) * 80.0).round()
+}
 
 fn fov_label(locale: &Locale, fov: f32) -> String {
     let prefix = locale.translate_key("options.fov");
@@ -261,7 +349,11 @@ fn fov_label(locale: &Locale, fov: f32) -> String {
 
 fn translated_or(locale: &Locale, key: &str, fallback: &str) -> String {
     let translated = locale.translate_key(key);
-    if translated == key { fallback.to_owned() } else { translated.to_owned() }
+    if translated == key {
+        fallback.to_owned()
+    } else {
+        translated.to_owned()
+    }
 }
 
 fn force_sprint_label(locale: &Locale, enabled: bool) -> String {

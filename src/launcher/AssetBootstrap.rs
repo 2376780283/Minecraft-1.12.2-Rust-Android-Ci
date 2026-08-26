@@ -26,12 +26,18 @@ pub fn needs_extraction(marker: &Path) -> bool {
 /// path traversal attempts.
 pub fn extraction_target(game_dir: &Path, entry: &str) -> Option<PathBuf> {
     let clean = entry.trim();
-    if clean.is_empty() { return None; }
+    if clean.is_empty() {
+        return None;
+    }
     let path = Path::new(clean);
-    if path.is_absolute() || clean.starts_with("..") || clean.contains("..\\") { return None; }
+    if path.is_absolute() || clean.starts_with("..") || clean.contains("..\\") {
+        return None;
+    }
     let assets_dir = game_dir.join("assets");
     let target = assets_dir.join(path);
-    if !target.starts_with(&assets_dir) { return None; }
+    if !target.starts_with(&assets_dir) {
+        return None;
+    }
     Some(target)
 }
 
@@ -69,20 +75,26 @@ mod platform {
         use std::ffi::CString;
 
         let marker = game_dir.join(MARKER);
-        if !needs_extraction(&marker) { return Ok(()); }
+        if !needs_extraction(&marker) {
+            return Ok(());
+        }
         let list_name = CString::new("mcassets.list").expect("static name");
-        let mut list = manager.open(&list_name)
-            .ok_or_else(|| anyhow::anyhow!("APK assets missing mcassets.list (did build_apk.py run?)"))?;
+        let mut list = manager.open(&list_name).ok_or_else(|| {
+            anyhow::anyhow!("APK assets missing mcassets.list (did build_apk.py run?)")
+        })?;
         let mut text = String::new();
         list.read_to_string(&mut text)?;
         let assets_dir = game_dir.join("assets");
         for line in text.lines() {
             let target = extraction_target(game_dir, line)
                 .ok_or_else(|| anyhow::anyhow!("bad manifest entry: {line:?}"))?;
-            if let Some(parent) = target.parent() { std::fs::create_dir_all(parent)?; }
+            if let Some(parent) = target.parent() {
+                std::fs::create_dir_all(parent)?;
+            }
             let asset_name = CString::new(format!("mcassets/{line}"))
                 .map_err(|_| anyhow::anyhow!("asset name contains NUL: {line:?}"))?;
-            let mut reader = manager.open(&asset_name)
+            let mut reader = manager
+                .open(&asset_name)
                 .ok_or_else(|| anyhow::anyhow!("missing APK asset: {line}"))?;
             let mut out = std::fs::File::create(&target)?;
             std::io::copy(&mut reader, &mut out)?;

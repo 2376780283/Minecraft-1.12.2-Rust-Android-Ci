@@ -42,7 +42,10 @@ pub extern "C" fn android_main(app: winit::platform::android::activity::AndroidA
         return;
     }
     let assets = game_dir.join("assets");
-    log::info!("Minecraft 1.12.2 Android entry: gameDir={}", game_dir.display());
+    log::info!(
+        "Minecraft 1.12.2 Android entry: gameDir={}",
+        game_dir.display()
+    );
     let args: Vec<String> = vec![
         "mc112-client".to_owned(),
         "run".to_owned(),

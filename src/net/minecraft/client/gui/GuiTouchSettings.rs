@@ -43,7 +43,9 @@ impl Default for GuiTouchSettings {
 }
 
 impl GuiTouchSettings {
-    pub fn new() -> Self { Self::default() }
+    pub fn new() -> Self {
+        Self::default()
+    }
 
     pub fn initGui(&mut self, width: i32, height: i32, locale: &Locale, settings: &GameSettings) {
         self.GuiScreen.width = width;
@@ -59,30 +61,83 @@ impl GuiTouchSettings {
         self.done.displayString = locale.translate_key("gui.done").to_owned();
     }
 
-    pub fn drawScreen(&mut self, draw: &mut GuiDrawList, font: &mut FontRenderer, mouseX: i32, mouseY: i32, partial: f32) {
+    pub fn drawScreen(
+        &mut self,
+        draw: &mut GuiDrawList,
+        font: &mut FontRenderer,
+        mouseX: i32,
+        mouseY: i32,
+        partial: f32,
+    ) {
         self.draw(draw, font, mouseX, mouseY, partial, false);
     }
-    pub fn drawScreenInWorld(&mut self, draw: &mut GuiDrawList, font: &mut FontRenderer, mouseX: i32, mouseY: i32, partial: f32) {
+    pub fn drawScreenInWorld(
+        &mut self,
+        draw: &mut GuiDrawList,
+        font: &mut FontRenderer,
+        mouseX: i32,
+        mouseY: i32,
+        partial: f32,
+    ) {
         self.draw(draw, font, mouseX, mouseY, partial, true);
     }
-    fn draw(&mut self, draw: &mut GuiDrawList, font: &mut FontRenderer, mouseX: i32, mouseY: i32, partial: f32, world: bool) {
-        if world { self.GuiScreen.drawDefaultBackgroundInWorld(draw); } else { self.GuiScreen.drawDefaultBackground(draw); }
-        self.GuiScreen.Gui.drawCenteredString(font, draw, &self.title, self.GuiScreen.width / 2, 15, 0x00FF_FFFF);
+    fn draw(
+        &mut self,
+        draw: &mut GuiDrawList,
+        font: &mut FontRenderer,
+        mouseX: i32,
+        mouseY: i32,
+        partial: f32,
+        world: bool,
+    ) {
+        if world {
+            self.GuiScreen.drawDefaultBackgroundInWorld(draw);
+        } else {
+            self.GuiScreen.drawDefaultBackground(draw);
+        }
+        self.GuiScreen.Gui.drawCenteredString(
+            font,
+            draw,
+            &self.title,
+            self.GuiScreen.width / 2,
+            15,
+            0x00FF_FFFF,
+        );
         self.enabled.drawButton(draw, font, mouseX, mouseY, partial);
         self.reset.drawButton(draw, font, mouseX, mouseY, partial);
         self.done.drawButton(draw, font, mouseX, mouseY, partial);
     }
 
-    pub fn mouseClicked(&mut self, x: i32, y: i32, button: i32, locale: &Locale, settings: &GameSettings) -> Option<GuiTouchSettingsInteraction> {
-        if button != 0 { return None; }
+    pub fn mouseClicked(
+        &mut self,
+        x: i32,
+        y: i32,
+        button: i32,
+        locale: &Locale,
+        settings: &GameSettings,
+    ) -> Option<GuiTouchSettingsInteraction> {
+        if button != 0 {
+            return None;
+        }
         if self.enabled.mousePressed(x, y) {
             self.enabled.displayString = enabled_label(locale, !settings.touch.enabled);
-            return Some(GuiTouchSettingsInteraction { action: GuiTouchSettingsAction::ToggleEnabled, sound: Some(self.enabled.playPressSound()) });
+            return Some(GuiTouchSettingsInteraction {
+                action: GuiTouchSettingsAction::ToggleEnabled,
+                sound: Some(self.enabled.playPressSound()),
+            });
         }
         if self.reset.mousePressed(x, y) {
-            return Some(GuiTouchSettingsInteraction { action: GuiTouchSettingsAction::ResetDefaults, sound: Some(self.reset.playPressSound()) });
+            return Some(GuiTouchSettingsInteraction {
+                action: GuiTouchSettingsAction::ResetDefaults,
+                sound: Some(self.reset.playPressSound()),
+            });
         }
-        self.done.mousePressed(x, y).then(|| GuiTouchSettingsInteraction { action: GuiTouchSettingsAction::Done, sound: Some(self.done.playPressSound()) })
+        self.done
+            .mousePressed(x, y)
+            .then(|| GuiTouchSettingsInteraction {
+                action: GuiTouchSettingsAction::Done,
+                sound: Some(self.done.playPressSound()),
+            })
     }
 }
 

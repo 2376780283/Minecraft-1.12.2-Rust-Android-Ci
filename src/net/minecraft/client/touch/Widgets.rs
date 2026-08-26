@@ -60,7 +60,11 @@ pub const BACKPACK: Sprite = (0, 154, 22, 22);
 pub const BACKPACK_ACTIVE: Sprite = (22, 154, 22, 22);
 
 pub const fn pick(active: bool, idle: Sprite, act: Sprite) -> Sprite {
-    if active { act } else { idle }
+    if active {
+        act
+    } else {
+        idle
+    }
 }
 
 /// One of the 9 DPad grid cells (the center cell is unused).
@@ -106,7 +110,10 @@ impl DPadLayout {
     /// Which cell contains `position`: row0 = forward row, row2 = backward.
     /// The diagonal cells are smaller than the main-direction cells.
     pub fn direction_at(&self, position: (f64, f64)) -> Option<DpadDirection> {
-        let p = (position.0 - self.origin.0 as f64, position.1 - self.origin.1 as f64);
+        let p = (
+            position.0 - self.origin.0 as f64,
+            position.1 - self.origin.1 as f64,
+        );
         let b = self.cell as f64;
         let d = self.diagonal as f64;
         let g = self.gap as f64;
@@ -143,29 +150,53 @@ impl DPadLayout {
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum TouchWidget {
-    Jump { rect: (i32, i32, i32, i32) },
-    Sneak { rect: (i32, i32, i32, i32) },
-    Chat { rect: (i32, i32, i32, i32) },
-    Pause { rect: (i32, i32, i32, i32) },
-    Backpack { rect: (i32, i32, i32, i32) },
-    Ascend { rect: (i32, i32, i32, i32) },
-    Descend { rect: (i32, i32, i32, i32) },
+    Jump {
+        rect: (i32, i32, i32, i32),
+    },
+    Sneak {
+        rect: (i32, i32, i32, i32),
+    },
+    Chat {
+        rect: (i32, i32, i32, i32),
+    },
+    Pause {
+        rect: (i32, i32, i32, i32),
+    },
+    Backpack {
+        rect: (i32, i32, i32, i32),
+    },
+    Ascend {
+        rect: (i32, i32, i32, i32),
+    },
+    Descend {
+        rect: (i32, i32, i32, i32),
+    },
     /// Backpack-close button inside the inventory GUI.
-    BackpackClose { rect: (i32, i32, i32, i32) },
+    BackpackClose {
+        rect: (i32, i32, i32, i32),
+    },
     /// End-credits skip button (maps the Escape key; touch has no Esc).
-    WinGameSkip { rect: (i32, i32, i32, i32) },
+    WinGameSkip {
+        rect: (i32, i32, i32, i32),
+    },
 }
 
 pub fn hit_test(widget: &TouchWidget, position: (f64, f64)) -> bool {
     match widget {
-        TouchWidget::Jump { rect } | TouchWidget::Sneak { rect }
-        | TouchWidget::Chat { rect } | TouchWidget::Pause { rect }
-        | TouchWidget::Backpack { rect } | TouchWidget::Ascend { rect }
-        | TouchWidget::Descend { rect } | TouchWidget::BackpackClose { rect }
+        TouchWidget::Jump { rect }
+        | TouchWidget::Sneak { rect }
+        | TouchWidget::Chat { rect }
+        | TouchWidget::Pause { rect }
+        | TouchWidget::Backpack { rect }
+        | TouchWidget::Ascend { rect }
+        | TouchWidget::Descend { rect }
+        | TouchWidget::BackpackClose { rect }
         | TouchWidget::WinGameSkip { rect } => {
             let (x, y, w, h) = *rect;
-            position.0 >= x as f64 && position.0 < (x + w) as f64
-                && position.1 >= y as f64 && position.1 < (y + h) as f64
+            position.0 >= x as f64
+                && position.0 < (x + w) as f64
+                && position.1 >= y as f64
+                && position.1 < (y + h) as f64
         }
     }
 }
@@ -229,22 +260,28 @@ pub fn bedrock_geometry(width: i32, height: i32) -> BedrockLayout {
         backpack: TouchWidget::Backpack { rect: backpack },
         ascend: TouchWidget::Ascend { rect: ascend },
         descend: TouchWidget::Descend { rect: descend },
-        backpackClose: TouchWidget::BackpackClose { rect: backpackClose },
+        backpackClose: TouchWidget::BackpackClose {
+            rect: backpackClose,
+        },
         winGameSkip: TouchWidget::WinGameSkip { rect: winGameSkip },
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{bedrock_geometry, DpadDirection, TouchWidget, hit_test};
+    use super::{bedrock_geometry, hit_test, DpadDirection, TouchWidget};
 
     /// TouchWidget is an enum, so extract the rect via match.
     fn rect(widget: TouchWidget) -> (i32, i32, i32, i32) {
         match widget {
-            TouchWidget::Jump { rect } | TouchWidget::Sneak { rect }
-            | TouchWidget::Chat { rect } | TouchWidget::Pause { rect }
-            | TouchWidget::Backpack { rect } | TouchWidget::Ascend { rect }
-            | TouchWidget::Descend { rect } | TouchWidget::BackpackClose { rect }
+            TouchWidget::Jump { rect }
+            | TouchWidget::Sneak { rect }
+            | TouchWidget::Chat { rect }
+            | TouchWidget::Pause { rect }
+            | TouchWidget::Backpack { rect }
+            | TouchWidget::Ascend { rect }
+            | TouchWidget::Descend { rect }
+            | TouchWidget::BackpackClose { rect }
             | TouchWidget::WinGameSkip { rect } => rect,
         }
     }
@@ -262,7 +299,7 @@ mod tests {
         assert_eq!(pause.1, 12);
         assert!(chat.0 + chat.2 / 2 < 300 && pause.0 + pause.2 / 2 > 300);
         assert!(chat.0 + chat.2 <= pause.0); // no overlap, chat left of pause
-        // backpack right of the 9th hotbar slot (hotbar x ends at 300)
+                                             // backpack right of the 9th hotbar slot (hotbar x ends at 300)
         assert!(rect(layout.backpack).0 >= 300);
         // dpad bottom-left grid
         assert!(layout.dpad.origin.0 < 30 && layout.dpad.origin.1 > 90);
@@ -274,18 +311,29 @@ mod tests {
         let (ox, oy) = layout.dpad.origin;
         let f = |x: i32, y: i32| (x as f64, y as f64);
         // top-middle cell = forward
-        assert_eq!(layout.dpad.direction_at(f(ox + 44 + 8 + 20, oy + 20)), Some(DpadDirection::Forward));
+        assert_eq!(
+            layout.dpad.direction_at(f(ox + 44 + 8 + 20, oy + 20)),
+            Some(DpadDirection::Forward)
+        );
         // left-middle = left
-        assert_eq!(layout.dpad.direction_at(f(ox + 20, oy + 44 + 8 + 20)), Some(DpadDirection::Left));
+        assert_eq!(
+            layout.dpad.direction_at(f(ox + 20, oy + 44 + 8 + 20)),
+            Some(DpadDirection::Left)
+        );
         // top-left corner = left-forward
-        assert_eq!(layout.dpad.direction_at(f(ox + 20, oy + 20)), Some(DpadDirection::LeftForward));
+        assert_eq!(
+            layout.dpad.direction_at(f(ox + 20, oy + 20)),
+            Some(DpadDirection::LeftForward)
+        );
         // outside
         assert_eq!(layout.dpad.direction_at(f(ox - 10, oy - 10)), None);
     }
 
     #[test]
     fn hit_test_checks_rect() {
-        let control = TouchWidget::Jump { rect: (502, 146, 56, 56) };
+        let control = TouchWidget::Jump {
+            rect: (502, 146, 56, 56),
+        };
         assert!(hit_test(&control, (510.0, 160.0)));
         assert!(!hit_test(&control, (490.0, 160.0)));
     }

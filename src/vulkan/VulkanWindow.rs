@@ -11,8 +11,8 @@ use winit::window::Window;
 use crate::net::minecraft::client::settings::GameSettings::GameSettings;
 use crate::vulkan::CpuFrame::CpuFrame;
 use crate::vulkan::GuiRenderFrame::GuiRenderFrame;
-use crate::vulkan::VulkanGuiPipeline::VulkanGuiPipeline;
 use crate::vulkan::SwapchainPolicy::choose_swapchain;
+use crate::vulkan::VulkanGuiPipeline::VulkanGuiPipeline;
 use crate::vulkan::VulkanWorldRenderer::WorldRenderFrame;
 use crate::vulkan::WorldGpuPipeline::WorldGpuPipeline;
 
@@ -124,18 +124,20 @@ impl VulkanWindow {
         .context("failed to create Vulkan window surface")?;
         let surfaceLoader = khr::surface::Instance::new(&entry, &instance);
 
-        let (physicalDevice, queueFamilies) = unsafe {
-            selectPhysicalDevice(&instance, &surfaceLoader, surface)
-        }
-        .context("no Vulkan device supports both graphics and presentation")?;
-        let memoryProperties = unsafe { instance.get_physical_device_memory_properties(physicalDevice) };
+        let (physicalDevice, queueFamilies) =
+            unsafe { selectPhysicalDevice(&instance, &surfaceLoader, surface) }
+                .context("no Vulkan device supports both graphics and presentation")?;
+        let memoryProperties =
+            unsafe { instance.get_physical_device_memory_properties(physicalDevice) };
         let supportedFeatures = unsafe { instance.get_physical_device_features(physicalDevice) };
         let wideLinesEnabled = supportedFeatures.wide_lines == vk::TRUE;
         let multiDrawIndirectEnabled = supportedFeatures.multi_draw_indirect == vk::TRUE;
-        let physicalDeviceProperties = unsafe { instance.get_physical_device_properties(physicalDevice) };
-        let physicalDeviceName = unsafe { CStr::from_ptr(physicalDeviceProperties.device_name.as_ptr()) }
-            .to_string_lossy()
-            .into_owned();
+        let physicalDeviceProperties =
+            unsafe { instance.get_physical_device_properties(physicalDevice) };
+        let physicalDeviceName =
+            unsafe { CStr::from_ptr(physicalDeviceProperties.device_name.as_ptr()) }
+                .to_string_lossy()
+                .into_owned();
         log::info!(
             "Vulkan output device: {} ({:?}), multi_draw_indirect={}",
             physicalDeviceName,
@@ -193,7 +195,10 @@ impl VulkanWindow {
             swapchainLoader,
             swapchain: vk::SwapchainKHR::null(),
             swapchainFormat: vk::Format::UNDEFINED,
-            swapchainExtent: vk::Extent2D { width: 0, height: 0 },
+            swapchainExtent: vk::Extent2D {
+                width: 0,
+                height: 0,
+            },
             swapchainImages: Vec::new(),
             commandPool,
             commandBuffers: Vec::new(),
@@ -217,10 +222,8 @@ impl VulkanWindow {
             worldPresentNanos: 0,
         };
         renderer.createSwapchainObjects(window)?;
-        renderer.framesInFlight = choose_frames_in_flight(
-            renderer.enableVsync,
-            renderer.swapchainImages.len(),
-        );
+        renderer.framesInFlight =
+            choose_frames_in_flight(renderer.enableVsync, renderer.swapchainImages.len());
         log::info!(
             "Vulkan frame slots: {} (vsync={}, swapchain_images={})",
             renderer.framesInFlight,
@@ -233,8 +236,12 @@ impl VulkanWindow {
         Ok(renderer)
     }
 
-    pub const fn extent(&self) -> vk::Extent2D { self.swapchainExtent }
-    pub fn deviceName(&self) -> &str { &self.physicalDeviceName }
+    pub const fn extent(&self) -> vk::Extent2D {
+        self.swapchainExtent
+    }
+    pub fn deviceName(&self) -> &str {
+        &self.physicalDeviceName
+    }
 
     pub fn drawFrame(&mut self, window: &Window, framePixels: &CpuFrame) -> anyhow::Result<()> {
         if self.swapchain == vk::SwapchainKHR::null() {
@@ -329,7 +336,8 @@ impl VulkanWindow {
             .swapchains(&swapchains)
             .image_indices(&imageIndices);
         let presentSuboptimal = match unsafe {
-            self.swapchainLoader.queue_present(self.presentQueue, &presentInfo)
+            self.swapchainLoader
+                .queue_present(self.presentQueue, &presentInfo)
         } {
             Ok(suboptimal) => suboptimal,
             Err(vk::Result::ERROR_OUT_OF_DATE_KHR) => true,
@@ -452,7 +460,8 @@ impl VulkanWindow {
             .swapchains(&swapchains)
             .image_indices(&imageIndices);
         let presentSuboptimal = match unsafe {
-            self.swapchainLoader.queue_present(self.presentQueue, &presentInfo)
+            self.swapchainLoader
+                .queue_present(self.presentQueue, &presentInfo)
         } {
             Ok(suboptimal) => suboptimal,
             Err(vk::Result::ERROR_OUT_OF_DATE_KHR) => true,
@@ -619,9 +628,7 @@ impl VulkanWindow {
             Ok(suboptimal) => suboptimal,
             Err(vk::Result::ERROR_OUT_OF_DATE_KHR) => true,
             Err(error) => {
-                return Err(anyhow!(
-                    "failed presenting Vulkan world frame: {error:?}"
-                ));
+                return Err(anyhow!("failed presenting Vulkan world frame: {error:?}"));
             }
         };
         self.worldPresentNanos = self
@@ -680,7 +687,9 @@ impl VulkanWindow {
         self.recreateSwapchain(window)
     }
 
-    pub const fn isVsyncEnabled(&self) -> bool { self.enableVsync }
+    pub const fn isVsyncEnabled(&self) -> bool {
+        self.enableVsync
+    }
 
     fn createSwapchainObjects(&mut self, window: &Window) -> anyhow::Result<()> {
         let (width, height) = self.nativeSurfaceSize(window);
@@ -689,10 +698,8 @@ impl VulkanWindow {
         }
 
         let capabilities = unsafe {
-            self.surfaceLoader.get_physical_device_surface_capabilities(
-                self.physicalDevice,
-                self.surface,
-            )
+            self.surfaceLoader
+                .get_physical_device_surface_capabilities(self.physicalDevice, self.surface)
         }
         .context("failed querying Vulkan surface capabilities")?;
         log::debug!(
@@ -713,17 +720,13 @@ impl VulkanWindow {
             "Vulkan surface does not support both color-attachment and transfer-destination swapchain usage"
         );
         let formats = unsafe {
-            self.surfaceLoader.get_physical_device_surface_formats(
-                self.physicalDevice,
-                self.surface,
-            )
+            self.surfaceLoader
+                .get_physical_device_surface_formats(self.physicalDevice, self.surface)
         }
         .context("failed querying Vulkan surface formats")?;
         let presentModes = unsafe {
-            self.surfaceLoader.get_physical_device_surface_present_modes(
-                self.physicalDevice,
-                self.surface,
-            )
+            self.surfaceLoader
+                .get_physical_device_surface_present_modes(self.physicalDevice, self.surface)
         }
         .context("failed querying Vulkan present modes")?;
         let choice = choose_swapchain(
@@ -838,7 +841,9 @@ impl VulkanWindow {
             Ok(memory) => memory,
             Err(error) => {
                 unsafe { self.device.destroy_buffer(buffer, None) };
-                return Err(anyhow!("failed allocating Vulkan GUI upload memory: {error:?}"));
+                return Err(anyhow!(
+                    "failed allocating Vulkan GUI upload memory: {error:?}"
+                ));
             }
         };
         if let Err(error) = unsafe { self.device.bind_buffer_memory(buffer, memory, 0) } {
@@ -846,9 +851,14 @@ impl VulkanWindow {
                 self.device.free_memory(memory, None);
                 self.device.destroy_buffer(buffer, None);
             }
-            return Err(anyhow!("failed binding Vulkan GUI upload memory: {error:?}"));
+            return Err(anyhow!(
+                "failed binding Vulkan GUI upload memory: {error:?}"
+            ));
         }
-        let mapped = match unsafe { self.device.map_memory(memory, 0, size, vk::MemoryMapFlags::empty()) } {
+        let mapped = match unsafe {
+            self.device
+                .map_memory(memory, 0, size, vk::MemoryMapFlags::empty())
+        } {
             Ok(pointer) => NonNull::new(pointer.cast::<u8>())
                 .context("Vulkan returned a null mapped GUI upload pointer")?,
             Err(error) => {
@@ -856,17 +866,23 @@ impl VulkanWindow {
                     self.device.free_memory(memory, None);
                     self.device.destroy_buffer(buffer, None);
                 }
-                return Err(anyhow!("failed mapping Vulkan GUI upload memory: {error:?}"));
+                return Err(anyhow!(
+                    "failed mapping Vulkan GUI upload memory: {error:?}"
+                ));
             }
         };
-        Ok(UploadBuffer { buffer, memory, mapped, size })
+        Ok(UploadBuffer {
+            buffer,
+            memory,
+            mapped,
+            size,
+        })
     }
 
     fn uploadFrame(&self, imageIndex: usize, framePixels: &CpuFrame) -> anyhow::Result<()> {
         let upload = &self.uploadBuffers[imageIndex];
-        let mapped = unsafe {
-            std::slice::from_raw_parts_mut(upload.mapped.as_ptr(), upload.size as usize)
-        };
+        let mapped =
+            unsafe { std::slice::from_raw_parts_mut(upload.mapped.as_ptr(), upload.size as usize) };
         framePixels.write_for_vulkan_format(self.swapchainFormat, mapped)
     }
 
@@ -973,14 +989,12 @@ impl VulkanWindow {
         let semaphoreInfo = vk::SemaphoreCreateInfo::default();
         let fenceInfo = vk::FenceCreateInfo::default().flags(vk::FenceCreateFlags::SIGNALED);
         for _ in 0..self.framesInFlight {
-            let imageAvailableSemaphore = unsafe {
-                self.device.create_semaphore(&semaphoreInfo, None)
-            }
-            .context("failed to create image-available semaphore")?;
-            let renderFinishedSemaphore = unsafe {
-                self.device.create_semaphore(&semaphoreInfo, None)
-            }
-            .context("failed to create render-finished semaphore")?;
+            let imageAvailableSemaphore =
+                unsafe { self.device.create_semaphore(&semaphoreInfo, None) }
+                    .context("failed to create image-available semaphore")?;
+            let renderFinishedSemaphore =
+                unsafe { self.device.create_semaphore(&semaphoreInfo, None) }
+                    .context("failed to create render-finished semaphore")?;
             let inFlightFence = unsafe { self.device.create_fence(&fenceInfo, None) }
                 .context("failed to create in-flight fence")?;
             self.synchronization.push(FrameSynchronization {
@@ -1002,9 +1016,12 @@ impl VulkanWindow {
         }
         unsafe {
             for synchronization in self.synchronization.drain(..) {
-                self.device.destroy_semaphore(synchronization.imageAvailableSemaphore, None);
-                self.device.destroy_semaphore(synchronization.renderFinishedSemaphore, None);
-                self.device.destroy_fence(synchronization.inFlightFence, None);
+                self.device
+                    .destroy_semaphore(synchronization.imageAvailableSemaphore, None);
+                self.device
+                    .destroy_semaphore(synchronization.renderFinishedSemaphore, None);
+                self.device
+                    .destroy_fence(synchronization.inFlightFence, None);
             }
         }
         self.framesInFlight = framesInFlight;
@@ -1062,7 +1079,9 @@ impl VulkanWindow {
                         log::debug!("native surface size: {w}x{h}");
                         return (w as u32, h as u32);
                     }
-                    log::debug!("native window reported invalid size {w}x{h}; falling back to winit");
+                    log::debug!(
+                        "native window reported invalid size {w}x{h}; falling back to winit"
+                    );
                 }
             }
         }
@@ -1091,7 +1110,13 @@ impl VulkanWindow {
             .context("failed to obtain the native window handle")?
             .as_raw();
         self.surface = unsafe {
-            ash_window::create_surface(&self.entry, &self.instance, displayHandle, windowHandle, None)
+            ash_window::create_surface(
+                &self.entry,
+                &self.instance,
+                displayHandle,
+                windowHandle,
+                None,
+            )
         }
         .context("failed recreating Vulkan surface after resume")?;
         self.recreateSwapchain(window)
@@ -1115,10 +1140,8 @@ impl VulkanWindow {
         }
         self.destroySwapchainObjects();
         self.createSwapchainObjects(window)?;
-        let desiredFramesInFlight = choose_frames_in_flight(
-            self.enableVsync,
-            self.swapchainImages.len(),
-        );
+        let desiredFramesInFlight =
+            choose_frames_in_flight(self.enableVsync, self.swapchainImages.len());
         if desiredFramesInFlight != self.framesInFlight {
             self.reconfigureSynchronizationObjects(desiredFramesInFlight)?;
             log::info!(
@@ -1155,7 +1178,8 @@ impl VulkanWindow {
     fn destroySwapchainObjects(&mut self) {
         unsafe {
             if !self.commandBuffers.is_empty() {
-                self.device.free_command_buffers(self.commandPool, &self.commandBuffers);
+                self.device
+                    .free_command_buffers(self.commandPool, &self.commandBuffers);
             }
             self.commandBuffers.clear();
             for upload in self.uploadBuffers.drain(..) {
@@ -1171,7 +1195,10 @@ impl VulkanWindow {
         self.swapchainImages.clear();
         self.imageInitialized.clear();
         self.imagesInFlight.clear();
-        self.swapchainExtent = vk::Extent2D { width: 0, height: 0 };
+        self.swapchainExtent = vk::Extent2D {
+            width: 0,
+            height: 0,
+        };
     }
 }
 
@@ -1180,9 +1207,12 @@ impl Drop for VulkanWindow {
         unsafe {
             let _ = self.device.device_wait_idle();
             for synchronization in self.synchronization.drain(..) {
-                self.device.destroy_semaphore(synchronization.imageAvailableSemaphore, None);
-                self.device.destroy_semaphore(synchronization.renderFinishedSemaphore, None);
-                self.device.destroy_fence(synchronization.inFlightFence, None);
+                self.device
+                    .destroy_semaphore(synchronization.imageAvailableSemaphore, None);
+                self.device
+                    .destroy_semaphore(synchronization.renderFinishedSemaphore, None);
+                self.device
+                    .destroy_fence(synchronization.inFlightFence, None);
             }
             if let Some(mut worldPipeline) = self.worldPipeline.take() {
                 worldPipeline.destroy(&self.device);

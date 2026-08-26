@@ -27,8 +27,13 @@ fn copy_prebuilt_spirv() {
     for file in shaders {
         let source = spv_dir.join(file);
         let target = out_dir.join(file);
-        std::fs::copy(&source, &target)
-            .unwrap_or_else(|e| panic!("failed copying {} to {}: {e}", source.display(), target.display()));
+        std::fs::copy(&source, &target).unwrap_or_else(|e| {
+            panic!(
+                "failed copying {} to {}: {e}",
+                source.display(),
+                target.display()
+            )
+        });
         println!("cargo:rerun-if-changed={}", source.display());
     }
 }

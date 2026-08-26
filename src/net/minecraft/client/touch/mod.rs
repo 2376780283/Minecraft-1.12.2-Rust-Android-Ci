@@ -2,11 +2,16 @@
 //! vanilla 1.12.2 keyboard bindings (MovementKeyState / KeyBinding
 //! semantics); layout follows the Bedrock default touch layout.
 
-#[path = "TouchConfig.rs"] pub mod TouchConfig;
-#[path = "Widgets.rs"] pub mod Widgets;
-#[path = "PointerState.rs"] pub mod PointerState;
-#[path = "KeyState.rs"] pub mod KeyState;
-#[path = "Draw.rs"] pub mod Draw;
+#[path = "Draw.rs"]
+pub mod Draw;
+#[path = "KeyState.rs"]
+pub mod KeyState;
+#[path = "PointerState.rs"]
+pub mod PointerState;
+#[path = "TouchConfig.rs"]
+pub mod TouchConfig;
+#[path = "Widgets.rs"]
+pub mod Widgets;
 
 #[cfg(any(target_os = "android", test))]
 use std::collections::HashMap;
@@ -71,7 +76,9 @@ impl Default for TouchRuntime {
 
 #[cfg(any(target_os = "android", test))]
 impl TouchRuntime {
-    pub fn new() -> Self { Self::default() }
+    pub fn new() -> Self {
+        Self::default()
+    }
 
     fn rebuildLayout(&mut self, size: (i32, i32)) {
         if size != self.lastSize {
@@ -83,15 +90,23 @@ impl TouchRuntime {
     fn hit(&self, position: (f64, f64), flying: bool) -> Option<HeldKind> {
         // The DPad center cell is the sneak button (below forward, left of
         // right); the outer eight cells are directions.
-        if Widgets::hit_test(&self.layout.sneak, position) { return Some(HeldKind::Sneak); }
+        if Widgets::hit_test(&self.layout.sneak, position) {
+            return Some(HeldKind::Sneak);
+        }
         if let Some(direction) = self.layout.dpad.direction_at(position) {
             return Some(HeldKind::Dpad(direction));
         }
-        if Widgets::hit_test(&self.layout.jump, position) { return Some(HeldKind::Jump); }
+        if Widgets::hit_test(&self.layout.jump, position) {
+            return Some(HeldKind::Jump);
+        }
         // Ascend/descend exist only while flying; outside flight they are
         // neither drawn nor hittable (the touch falls through).
-        if flying && Widgets::hit_test(&self.layout.ascend, position) { return Some(HeldKind::Ascend); }
-        if flying && Widgets::hit_test(&self.layout.descend, position) { return Some(HeldKind::Descend); }
+        if flying && Widgets::hit_test(&self.layout.ascend, position) {
+            return Some(HeldKind::Ascend);
+        }
+        if flying && Widgets::hit_test(&self.layout.descend, position) {
+            return Some(HeldKind::Descend);
+        }
         None
     }
 
@@ -250,7 +265,10 @@ mod runtime_tests {
 
     fn jump_center() -> (f64, f64) {
         let layout = bedrock_geometry(600, 270);
-        let rect = match layout.jump { TouchWidget::Jump { rect } => rect, _ => unreachable!() };
+        let rect = match layout.jump {
+            TouchWidget::Jump { rect } => rect,
+            _ => unreachable!(),
+        };
         ((rect.0 + rect.2 / 2) as f64, (rect.1 + rect.3 / 2) as f64)
     }
 
@@ -259,9 +277,23 @@ mod runtime_tests {
         let mut runtime = TouchRuntime::new();
         let layout = bedrock_geometry(600, 270);
         let center = jump_center();
-        assert!(runtime.handle_touch_widget(winit::event::TouchPhase::Started, 0, center, (600, 270), 0, false));
+        assert!(runtime.handle_touch_widget(
+            winit::event::TouchPhase::Started,
+            0,
+            center,
+            (600, 270),
+            0,
+            false
+        ));
         assert!(runtime.keys.jump);
-        runtime.handle_touch_widget(winit::event::TouchPhase::Ended, 0, center, (600, 270), 1, false);
+        runtime.handle_touch_widget(
+            winit::event::TouchPhase::Ended,
+            0,
+            center,
+            (600, 270),
+            1,
+            false,
+        );
         assert!(!runtime.keys.jump);
     }
 
@@ -269,6 +301,13 @@ mod runtime_tests {
     fn started_outside_widgets_falls_through() {
         let mut runtime = TouchRuntime::new();
         // Top-left corner is empty (no widget there).
-        assert!(!runtime.handle_touch_widget(winit::event::TouchPhase::Started, 0, (5.0, 5.0), (600, 270), 0, false));
+        assert!(!runtime.handle_touch_widget(
+            winit::event::TouchPhase::Started,
+            0,
+            (5.0, 5.0),
+            (600, 270),
+            0,
+            false
+        ));
     }
 }

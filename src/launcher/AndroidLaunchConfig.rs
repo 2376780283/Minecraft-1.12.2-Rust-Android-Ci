@@ -15,7 +15,9 @@ pub struct AndroidLaunchConfig {
     pub user_type: String,
 }
 
-fn default_user_type() -> String { "legacy".to_owned() }
+fn default_user_type() -> String {
+    "legacy".to_owned()
+}
 
 impl Default for AndroidLaunchConfig {
     fn default() -> Self {
@@ -51,7 +53,10 @@ mod tests {
     #[test]
     fn parses_valid_config() {
         let dir = std::env::temp_dir().join(format!("launchcfg-test-{}", std::process::id()));
-        write_config(&dir, r#"{"username":"Steve","player_id":"1234","access_token":"tok","user_type":"legacy"}"#);
+        write_config(
+            &dir,
+            r#"{"username":"Steve","player_id":"1234","access_token":"tok","user_type":"legacy"}"#,
+        );
         let config = AndroidLaunchConfig::load(&dir);
         assert_eq!(config.username, "Steve");
         assert_eq!(config.player_id, "1234");

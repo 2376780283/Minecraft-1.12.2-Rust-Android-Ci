@@ -15,7 +15,9 @@ mod platform {
     }
 
     pub fn android_app() -> &'static AndroidApp {
-        ANDROID_APP.get().expect("android_main must set the AndroidApp before use")
+        ANDROID_APP
+            .get()
+            .expect("android_main must set the AndroidApp before use")
     }
 
     /// The app-internal data directory (getFilesDir equivalent). Used as gameDir.
@@ -31,12 +33,17 @@ mod platform {
         use jni::objects::{JObject, JValue};
 
         let app = android_app();
-        let Ok(vm) = (unsafe { jni::JavaVM::from_raw(app.vm_as_ptr() as *mut jni::sys::JavaVM) }) else {
+        let Ok(vm) = (unsafe { jni::JavaVM::from_raw(app.vm_as_ptr() as *mut jni::sys::JavaVM) })
+        else {
             return false;
         };
-        let Ok(mut env) = vm.attach_current_thread() else { return false; };
+        let Ok(mut env) = vm.attach_current_thread() else {
+            return false;
+        };
         let activity = unsafe { JObject::from_raw(app.activity_as_ptr() as jni::sys::jobject) };
-        let Some(url_string) = env.new_string(url).ok() else { return false; };
+        let Some(url_string) = env.new_string(url).ok() else {
+            return false;
+        };
         let url_obj = JObject::from(url_string);
         let Ok(uri) = env.call_static_method(
             "android/net/Uri",
@@ -46,8 +53,12 @@ mod platform {
         ) else {
             return false;
         };
-        let Ok(uri) = uri.l() else { return false; };
-        let Ok(action) = env.new_string("android.intent.action.VIEW") else { return false; };
+        let Ok(uri) = uri.l() else {
+            return false;
+        };
+        let Ok(action) = env.new_string("android.intent.action.VIEW") else {
+            return false;
+        };
         let action_obj = JObject::from(action);
         let Ok(intent) = env.new_object(
             "android/content/Intent",
@@ -56,7 +67,12 @@ mod platform {
         ) else {
             return false;
         };
-        match env.call_method(&activity, "startActivity", "(Landroid/content/Intent;)V", &[JValue::Object(&intent)]) {
+        match env.call_method(
+            &activity,
+            "startActivity",
+            "(Landroid/content/Intent;)V",
+            &[JValue::Object(&intent)],
+        ) {
             Ok(_) => true,
             Err(error) => {
                 log::error!("failed starting browser intent: {error}");
@@ -114,21 +130,44 @@ mod platform {
         use jni::objects::JObject;
 
         let app = android_app();
-        let Ok(vm) = (unsafe { jni::JavaVM::from_raw(app.vm_as_ptr() as *mut jni::sys::JavaVM) }) else {
+        let Ok(vm) = (unsafe { jni::JavaVM::from_raw(app.vm_as_ptr() as *mut jni::sys::JavaVM) })
+        else {
             return (0, 0);
         };
-        let Ok(mut env) = vm.attach_current_thread() else { return (0, 0); };
+        let Ok(mut env) = vm.attach_current_thread() else {
+            return (0, 0);
+        };
         let activity = unsafe { JObject::from_raw(app.activity_as_ptr() as jni::sys::jobject) };
-        let Ok(resources) = env.call_method(&activity, "getResources", "()Landroid/content/res/Resources;", &[]) else {
+        let Ok(resources) = env.call_method(
+            &activity,
+            "getResources",
+            "()Landroid/content/res/Resources;",
+            &[],
+        ) else {
             return (0, 0);
         };
-        let Ok(resources) = resources.l() else { return (0, 0); };
-        let Ok(metrics) = env.call_method(&resources, "getDisplayMetrics", "()Landroid/util/DisplayMetrics;", &[]) else {
+        let Ok(resources) = resources.l() else {
             return (0, 0);
         };
-        let Ok(metrics) = metrics.l() else { return (0, 0); };
-        let width = env.get_field(&metrics, "widthPixels", "I").and_then(|v| v.i()).unwrap_or(0);
-        let height = env.get_field(&metrics, "heightPixels", "I").and_then(|v| v.i()).unwrap_or(0);
+        let Ok(metrics) = env.call_method(
+            &resources,
+            "getDisplayMetrics",
+            "()Landroid/util/DisplayMetrics;",
+            &[],
+        ) else {
+            return (0, 0);
+        };
+        let Ok(metrics) = metrics.l() else {
+            return (0, 0);
+        };
+        let width = env
+            .get_field(&metrics, "widthPixels", "I")
+            .and_then(|v| v.i())
+            .unwrap_or(0);
+        let height = env
+            .get_field(&metrics, "heightPixels", "I")
+            .and_then(|v| v.i())
+            .unwrap_or(0);
         (width as u32, height as u32)
     }
 
