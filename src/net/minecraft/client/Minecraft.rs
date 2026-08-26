@@ -8771,12 +8771,15 @@ impl ApplicationHandler for MinecraftApplication {
         // residual (`field_194147_b`), consumed by `render_partial_ticks` on
         // the next RedrawRequested. The tick cadence is driven by wall time,
         // exactly like `Minecraft#runGameLoop` with `timer.elapsedTicks`.
-        let frameDelta = (now.duration_since(self.lastTimerSync).as_secs_f32() * 20.0).min(1.0);
+        // MCP `Timer#updateTimer` never clamps the frame delta — a stall
+        // accumulates every tick — and subtracts the FULL elapsedTicks,
+        // leaving the exact source remainder as the residual.
+        let frameDelta = now.duration_since(self.lastTimerSync).as_secs_f32() * 20.0;
         self.lastTimerSync = now;
-        self.timerAccumulator += frameDelta;
-        let elapsedTicks = (self.timerAccumulator as i32).min(10);
-        self.timerAccumulator -= elapsedTicks as f32;
-        if elapsedTicks > 0 {
+        let (elapsedTicks, residual) = timer_pump(frameDelta, self.timerAccumulator);
+        self.timerAccumulator = residual;
+        let runTicks = elapsedTicks.min(10);
+        if runTicks > 0 {
             let (forceSprint, chatWidth, chatScale, particleSetting, showSubtitles) = self.minecraft.as_ref().map_or(
                 (false, 1.0, 1.0, 0, false),
                 |minecraft| (
@@ -8788,7 +8791,7 @@ impl ApplicationHandler for MinecraftApplication {
                 ),
             );
             let controlHeld = self.keyboardModifiers.control_key();
-            for _ in 0..elapsedTicks {
+            for _ in 0..runTicks {
                 let (redraw, action) = self
                     .mainMenu
                     .as_mut()
@@ -8870,6 +8873,16 @@ impl ApplicationHandler for MinecraftApplication {
 /// invariant: a value reaching 1.0 means a tick boundary was crossed between
 /// the last pump and this render, where the interpolated position is the
 /// freshly ticked position until the next pump runs the tick.
+/// MCP `Timer#updateTimer` accumulator step: adds the full frame interval
+/// in ticks (never clamped — a stall must accumulate every tick), returns
+/// the whole `elapsedTicks` (the run loop caps execution at 10) and the
+/// exact source remainder as the render partial-ticks residual.
+fn timer_pump(frameDelta: f32, accumulator: f32) -> (i32, f32) {
+    let accumulated = accumulator + frameDelta;
+    let elapsedTicks = accumulated as i32;
+    (elapsedTicks, accumulated - elapsedTicks as f32)
+}
+
 fn render_partial_ticks(residual: f32, now: Instant, lastTimerSync: Instant) -> f32 {
     (residual + now.duration_since(lastTimerSync).as_secs_f32() * 20.0).clamp(0.0, 1.0)
 }
@@ -9007,6 +9020,40 @@ mod frame_rate_tests {
     }
 
     #[test]
+    fn timer_pump_accumulates_stalls_without_clamping() {
+        // MCP `Timer#updateTimer` never clamps the frame delta: a 250 ms
+        // stall accumulates ~5 ticks, a 600 ms stall ~12. The run loop caps
+        // execution at 10 ticks, but the accumulator subtracts the *full*
+        // elapsedTicks, so the residual stays the exact source remainder
+        // and no time is dropped or carried over into catch-up ticks.
+        let (ticks, residual) = timer_pump(5.0, 0.0);
+        assert_eq!(ticks, 5);
+        assert!((residual - 0.0).abs() < 1.0e-6);
+
+        let (ticks, residual) = timer_pump(12.0, 0.0);
+        assert_eq!(ticks, 12); // run loop executes min(12, 10) = 10
+        assert!((residual - 0.0).abs() < 1.0e-6);
+
+        // A sub-tick delta keeps the whole fraction as residual.
+        let (ticks, residual) = timer_pump(0.66, 0.0);
+        assert_eq!(ticks, 0);
+        assert!((residual - 0.66).abs() < 1.0e-6);
+
+        // Accumulation across frames: 0.5 + 0.5 crosses one tick boundary.
+        let (ticks, residual) = timer_pump(0.5, 0.5);
+        assert_eq!(ticks, 1);
+        assert!((residual - 0.0).abs() < 1.0e-6);
+
+        // Long stall followed by normal frames: the next frame starts from
+        // the true remainder, not a clamped budget.
+        let (ticks, residual) = timer_pump(12.66, 0.0);
+        assert_eq!(ticks, 12);
+        assert!((residual - 0.66).abs() < 1.0e-6);
+        let (ticks, residual) = timer_pump(1.0 / 3.0, residual);
+        assert_eq!(ticks, 0);
+        assert!((residual - 0.99333).abs() < 1.0e-5);
+    }
+
     fn partial_ticks_is_the_tick_pump_residual() {
         let lastSync = Instant::now();
         // MCP `Timer#field_194147_b`: partialTicks is the accumulator
