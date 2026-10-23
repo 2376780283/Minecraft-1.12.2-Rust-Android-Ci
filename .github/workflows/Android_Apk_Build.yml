@@ -1,4 +1,4 @@
-name: Build Android Release APK (no assets)
+name: Build Android Release APK
 
 on:
   workflow_dispatch:
@@ -15,6 +15,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # ---------- 1. Rust + Android target ----------
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
         with:
@@ -23,29 +24,38 @@ jobs:
       - name: Install cargo-ndk
         run: cargo install cargo-ndk --version 4.1.2
 
+      # ---------- 2. Android SDK / NDK ----------
+      # setup-android v4 + 显式 packages，绕开已下架的 legacy 'tools' 包
       - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
+        uses: android-actions/setup-android@v4
+        with:
+          packages: 'platform-tools'
 
+      # 自动接受许可证并安装 NDK（文档验证 r29）
       - name: Install NDK
-        run: sdkmanager "ndk;29.0.14206865"
+        run: yes | sdkmanager "ndk;29.0.14206865"
 
-      # ---------- 资源：只建占位目录，不导入任何真实资源 ----------
-      # build_apk.py 会读 runtime/assets 生成 mcassets.list；
-      # 这里给一个空目录，让脚本能跑通并产出不含资源的 APK。
+      # ---------- 3. 资源占位（手动导入方案）----------
+      # 仓库不捆绑原版资源。这里只建空目录让 build_apk.py 能跑通，
+      # 产出的 APK 不含资源；真实游玩请在本地已导入 runtime/assets 的环境重新打包。
       - name: Create placeholder assets dir
         run: mkdir -p runtime/assets/minecraft
 
-      # 注意：SPIR-V 着色器默认已入库。
-      # 若你的仓库没有 src/vulkan/shaders/spv/*.spv，CI 会编译失败，
-      # 请在本地 Windows 跑一次 spv-precompiler 并提交产物。
+      # 注意：SPIR-V 着色器应已入库（src/vulkan/shaders/spv/*.spv，共 7 个）。
+      # 若缺失，请在本地 Windows 执行：
+      #   cargo run --manifest-path tools/spv-precompiler/Cargo.toml --release
+      # 然后将产物提交到仓库。
 
+      # ---------- 4. 交叉编译 cdylib ----------
       - name: Build cdylib for Android
         run: cargo ndk -t arm64-v8a --platform 31 -o target/android build --release --lib
         env:
           ANDROID_NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/29.0.14206865
 
+      # ---------- 5. debug keystore（CI 干净环境没有默认 keystore）----------
       - name: Generate debug keystore
         run: |
+          mkdir -p ~/.android
           keytool -genkeypair -v \
             -keystore ~/.android/debug.keystore \
             -alias androiddebugkey \
@@ -53,6 +63,7 @@ jobs:
             -storepass android -keypass android \
             -dname "CN=Android Debug,O=Android,C=US"
 
+      # ---------- 6. 打包 APK ----------
       - name: Build APK
         run: python tools/build_apk.py
 
@@ -61,9 +72,10 @@ jobs:
           ls -lh dist/
           test -f dist/Minecraft112Rust.apk
 
+      # ---------- 7. 上传可下载 artifact ----------
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Minecraft112Rust-noassets-${{ github.sha }}
+          name: Minecraft112Rust-release-${{ github.sha }}
           path: dist/Minecraft112Rust.apk
           retention-days: 30
